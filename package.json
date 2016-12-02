@@ -6,12 +6,12 @@
     "debug": "2.2.0",
     "redis": "^2.6.2",
     "socket.io-emitter": "^1.0.0",
-    "node-pngquant-native": "^1.0.4"
+    "node-pngquant-native": "1.0.4"
   },
   "scripts": {
     "start": "node index.js"
   },
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=7.0.0"
   }
 }

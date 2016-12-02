@@ -8,7 +8,7 @@ var io = require('socket.io-emitter')(redis);
 var pngquant = require('node-pngquant-native');
 
 var option = {
-    speed: 11
+    speed: 8
 };
 
 sub.subscribe('weplay:frame:raw');
