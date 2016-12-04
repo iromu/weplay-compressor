@@ -1,21 +1,30 @@
 'use strict';
 
 // redis
-var redis = require('./redis')();
-var sub = require('./redis')();
-var io = require('socket.io-emitter')(redis);
-// compression lib
-var pngquant = require('node-pngquant-native');
+const redis = require('./redis')();
+const sub = require('./redis')();
+const io = require('socket.io-emitter')(redis);
 
-var option = {
+// compression lib
+const pngquant = require('node-pngquant-native');
+
+const option = {
     speed: 8
 };
 
+const compress = (frame) => {
+    return pngquant.compress(frame, option);
+};
+
 sub.subscribe('weplay:frame:raw');
-sub.on('message', function (channel, frame) {
+sub.on('message', (channel, frame) => {
     if ('weplay:frame:raw' != channel) return;
 
-    var resBuffer = pngquant.compress(frame, option);
-    redis.set('weplay:frame', resBuffer);
-    io.emit('frame', resBuffer);
+    try {
+        const resBuffer = compress(frame);
+        redis.set('weplay:frame', resBuffer);
+        io.emit('frame', resBuffer);
+    } catch (e) {
+        console.error(e);
+    }
 });
