@@ -1,4 +1,4 @@
-FROM node:6
+FROM node:argon
 
 # Create app directory
 RUN mkdir -p /usr/src/app/compressor
@@ -7,7 +7,6 @@ WORKDIR /usr/src/app/compressor
 COPY . .
 
 # Install app dependencies
-RUN npm install -g node-pngquant-native
 RUN npm install --production
 
 # Setup environment
