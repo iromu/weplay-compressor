@@ -5,6 +5,7 @@
   "dependencies": {
     "weplay-common": "iromu/weplay-common",
     "socket.io-emitter": "^1.0.0",
+    "fps": "0.0.3",
     "node-pngquant-native": "1.0.4"
   },
   "scripts": {
