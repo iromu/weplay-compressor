@@ -1,5 +1,3 @@
-'use strict';
-
 const logger = require('weplay-common').logger('weplay-compressor');
 
 // redis
@@ -16,7 +14,7 @@ ticker.on('data', framerate => {
     logger.info('fps', {fps: Math.round(framerate)});
 });
 
-var pngquant;
+let pngquant;
 try {
     // compression lib
     pngquant = require('node-pngquant-native');
@@ -25,34 +23,30 @@ try {
     logger.error(e);
 }
 
-var failures = 0;
+let failures = 0;
 
-var sendFrame = function (room, frame) {
+const sendFrame = (room, frame) => {
     io.to(room).emit('frame', frame);
     redis.set(`weplay:frame:${room}`, frame);
-    redis.expire(`weplay:frame:${room}`, 1);
 };
 
 
 sub.psubscribe('weplay:frame:raw:*');
 sub.on('pmessage', (pattern, channel, frame) => {
-    var room = channel.toString().split(":")[3];
-    //console.log("A temperature of " + message + " was read in " + room);
+    const room = channel.toString().split(":")[3];
 
-    //logger.debug('weplay:frame:raw compressed', room);
     if (pngquant && failures < 3) {
         try {
             const resBuffer = pngquant.compress(frame);
-            //logger.debug('weplay:frame:raw compressed');
-            sendFrame(room,resBuffer);
+            sendFrame(room, resBuffer);
         } catch (e) {
             failures++;
             logger.error('weplay:frame:raw', e);
-            sendFrame(room,frame);
+            sendFrame(room, frame);
         }
     } else {
         logger.debug('weplay:frame:raw');
-        sendFrame(room,frame);
+        sendFrame(room, frame);
     }
     ticker.tick();
 });
