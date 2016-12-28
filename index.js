@@ -1,10 +1,14 @@
-const logger = require('weplay-common').logger('weplay-compressor');
+const uuid = require('node-uuid').v4();
+const logger = require('weplay-common').logger('weplay-compressor', uuid);
 
 // redis
 const redis = require('weplay-common').redis();
-const sub = require('weplay-common').redis();
-const io = require('socket.io-emitter')(redis);
+const redisSub = require('weplay-common').redis();
 
+const EventBus = require('weplay-common').EventBus;
+let bus = new EventBus(redis, redisSub);
+
+const io = require('socket.io-emitter')(redis);
 
 const fps = require('fps');
 const ticker = fps({
@@ -24,15 +28,23 @@ try {
 }
 
 let failures = 0;
-
+let persistCounter = {};
 const sendFrame = (room, frame) => {
     io.to(room).emit('frame', frame);
-    redis.set(`weplay:frame:${room}`, frame);
+    const counter = persistCounter[room];
+    if (counter > 10) {
+        persistCounter[room] = 1;
+        redis.set(`weplay:frame:${room}`, frame);
+    } else if (counter === undefined || counter === 0) {
+        persistCounter[room] = 1;
+        redis.set(`weplay:frame:${room}`, frame);
+    } else {
+        persistCounter[room] = counter + 1;
+    }
 };
 
 
-sub.psubscribe('weplay:frame:raw:*');
-sub.on('pmessage', (pattern, channel, frame) => {
+bus.psubscribe('weplay:frame:raw:*', (pattern, channel, frame) => {
     const room = channel.toString().split(":")[3];
 
     if (pngquant && failures < 3) {
@@ -49,4 +61,15 @@ sub.on('pmessage', (pattern, channel, frame) => {
         sendFrame(room, frame);
     }
     ticker.tick();
+});
+
+
+require('weplay-common').cleanup(function destroyData() {
+    logger.info('Destroying data.');
+    for (var room in persistCounter) {
+        redis.del(`weplay:frame:${room}`);
+    }
+
+    bus.publish('weplay:compressor:unsubscribe', uuid);
+    bus.destroy();
 });

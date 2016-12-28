@@ -3,10 +3,11 @@
   "version": "0.0.1",
   "description": "",
   "dependencies": {
-    "weplay-common": "iromu/weplay-common",
-    "socket.io-emitter": "^1.0.0",
     "fps": "0.0.3",
-    "node-pngquant-native": "1.0.4"
+    "node-pngquant-native": "1.0.4",
+    "node-uuid": "^1.4.7",
+    "socket.io-emitter": "^1.0.0",
+    "weplay-common": "iromu/weplay-common"
   },
   "scripts": {
     "start": "node index.js"
