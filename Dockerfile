@@ -7,6 +7,7 @@ WORKDIR /usr/src/app/compressor
 COPY . .
 
 # Install app dependencies
+RUN npm install -g babel-cli
 RUN npm install --production
 
 # Setup environment
