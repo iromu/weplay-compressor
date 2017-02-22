@@ -3,15 +3,16 @@
   "version": "0.0.1",
   "description": "",
   "dependencies": {
-    "debug": "2.2.0",
-    "redis": "^2.6.2",
+    "fps": "0.0.3",
+    "node-pngquant-native": "1.0.4",
+    "node-uuid": "^1.4.7",
     "socket.io-emitter": "^1.0.0",
-    "node-pngquant-native": "^1.0.4"
+    "weplay-common": "iromu/weplay-common"
   },
   "scripts": {
     "start": "node index.js"
   },
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=6.0.0"
   }
 }
