@@ -11,8 +11,12 @@
     "socket.io-emitter": "^1.0.0",
     "weplay-common": "iromu/weplay-common"
   },
+  "devDependencies": {
+    "jshint": "latest"
+  },
   "scripts": {
-    "start": "babel-node index.js"
+    "start": "babel-node index.js",
+    "lint": "./node_modules/weplay-common/node_modules/.bin/eslint report ./src"
   },
   "engines": {
     "node": ">=6.0.0"
