@@ -11,7 +11,7 @@ class CompressorService {
     this.pngquant = undefined
     this.failures = 0
     this.romHash = undefined
-    this.ticker = fps({every: 10})
+    this.ticker = fps({every: 60})
     this.ticker.on('data', framerate => {
       logger.info('CompressorService[%s] fps %s', uuid, framerate)
     })
