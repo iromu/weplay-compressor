@@ -16,7 +16,7 @@
   },
   "scripts": {
     "start": "babel-node index.js",
-    "lint": "./node_modules/weplay-common/node_modules/.bin/eslint report ./src"
+    "lint": "./node_modules/weplay-common/node_modules/.bin/eslint report ."
   },
   "engines": {
     "node": ">=6.0.0"

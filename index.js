@@ -1,9 +1,10 @@
-process.title = 'weplay-compressor';
+process.title = 'weplay-compressor'
 
-const discoveryPort = process.env.DISCOVERY_PORT || 3040;
-const discoveryUrl = process.env.DISCOVERY_URL || 'http://localhost:3010';
+const discoveryUrl = process.env.DISCOVERY_URL || 'http://localhost:3010'
+const discoveryPort = process.env.DISCOVERY_PORT || 3040
+const statusPort = process.env.STATUS_PORT || 8083
 
-const CompressorService = require('./CompressorService');
-const service = new CompressorService(discoveryUrl, discoveryPort);
+const CompressorService = require('./CompressorService')
+const service = new CompressorService(discoveryUrl, discoveryPort, statusPort)
 
-require('weplay-common').cleanup(service.destroy.bind(service));
+require('weplay-common').cleanup(service.destroy.bind(service))

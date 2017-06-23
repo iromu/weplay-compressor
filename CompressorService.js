@@ -6,7 +6,7 @@ const fps = require('fps')
 const autoload = process.env.AUTOLOAD || false
 
 class CompressorService {
-  constructor(discoveryUrl, discoveryPort) {
+  constructor(discoveryUrl, discoveryPort, statusPort) {
     this.uuid = require('node-uuid').v4()
     this.pngquant = undefined
     this.failures = 0
@@ -18,6 +18,7 @@ class CompressorService {
     this.bus = new EventBus({
       url: discoveryUrl,
       port: discoveryPort,
+      statusPort: statusPort,
       name: 'compressor',
       id: this.uuid,
       serverListeners: {
@@ -35,7 +36,7 @@ class CompressorService {
 
   init() {
     if (autoload) {
-      //this.bus.emit('rom', 'request');
+      // this.bus.emit('rom', 'request');
     }
 
     try {
@@ -81,7 +82,7 @@ class CompressorService {
       // Locate a raw frame stream supplier
       // channel, room, event, listener
       this.bus.streamJoin('emu', this.romHash, 'frame', this.onRawFrame.bind(this))
-      //this.bus.stream(this.romHash, 'frame', {});
+      // this.bus.stream(this.romHash, 'frame', {});
     } else {
       logger.error('EmulatorService.streamJoinRequested. Ignoring request for a new stream.', {
         socket: socket.id,
