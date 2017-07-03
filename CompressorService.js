@@ -3,8 +3,6 @@ const logger = require('weplay-common').logger('compressor-service', uuid)
 const EventBus = require('weplay-common').EventBus
 const fps = require('fps')
 
-const autoload = process.env.AUTOLOAD || false
-
 class CompressorService {
   constructor(discoveryUrl, discoveryPort, statusPort) {
     this.uuid = require('node-uuid').v4()
@@ -21,6 +19,25 @@ class CompressorService {
       statusPort: statusPort,
       name: 'compressor',
       id: this.uuid,
+      clientListeners: [
+        {
+          name: 'emu',
+          event: 'connect',
+          handler: () => {
+            logger.info('connected to emu')
+            if (this.romHash) {
+              this.bus.streamJoin('emu', this.romHash, 'frame', this.onRawFrame.bind(this))
+            }
+          }
+        },
+        {
+          name: 'emu',
+          event: 'disconnect',
+          handler: () => {
+            logger.info('disconnect from emu')
+          }
+        }
+      ],
       serverListeners: {
         'streamJoinRequested': this.streamJoinRequested.bind(this),
         'streamCreateRequested': this.streamCreateRequested.bind(this)
@@ -35,10 +52,6 @@ class CompressorService {
   }
 
   init() {
-    if (autoload) {
-      // this.bus.emit('rom', 'request');
-    }
-
     try {
       this.romHash = null
       // compression lib
@@ -78,7 +91,6 @@ class CompressorService {
     })
     if (!this.romHash || this.romHash === request) {
       this.romHash = request
-      socket.join(this.romHash)
       // Locate a raw frame stream supplier
       // channel, room, event, listener
       this.bus.streamJoin('emu', this.romHash, 'frame', this.onRawFrame.bind(this))
@@ -89,6 +101,7 @@ class CompressorService {
         request: JSON.stringify(request)
       })
     }
+    socket.join(this.romHash)
   }
 
   sendFrame(frame) {
