@@ -9,9 +9,11 @@ class CompressorService {
     this.pngquant = undefined
     this.failures = 0
     this.romHash = undefined
+    this.listenerCounter = 0
     this.ticker = fps({every: 60})
     this.ticker.on('data', framerate => {
-      logger.info('CompressorService[%s] fps %s', uuid, framerate)
+      logger.info('CompressorService[%s] %s hash[%s] fps %s', uuid,
+        this.listenerCounter, this.romHash, framerate)
     })
     this.bus = new EventBus({
       url: discoveryUrl,
@@ -25,7 +27,9 @@ class CompressorService {
           event: 'connect',
           handler: () => {
             logger.info('connected to emu')
-            if (this.romHash) {
+            if (this.romHash && !this.joined) {
+              this.joined = true
+              this.listenerCounter++
               this.bus.streamJoin('emu', this.romHash, 'frame', this.onRawFrame.bind(this))
             }
           }
@@ -34,6 +38,7 @@ class CompressorService {
           name: 'emu',
           event: 'disconnect',
           handler: () => {
+            this.joined = false
             logger.info('disconnect from emu')
           }
         }
@@ -47,19 +52,22 @@ class CompressorService {
         discoveryUrl: discoveryUrl,
         uuid: this.uuid
       })
-      this.init()
+      this.onConnect()
     })
   }
 
-  init() {
-    try {
-      this.romHash = null
-      // compression lib
-      this.pngquant = require('node-pngquant-native')
-      logger.debug('pngquant loaded')
-      logger.info('CompressorService waiting for incoming users.')
-    } catch (e) {
-      logger.error(e)
+  onConnect() {
+    if (!this.connected) {
+      try {
+        // Reset after discovery reconnects
+        this.connected = true
+        // compression lib
+        this.pngquant = require('node-pngquant-native')
+        logger.debug('pngquant loaded')
+        logger.info('CompressorService waiting for incoming users.')
+      } catch (e) {
+        logger.error(e)
+      }
     }
   }
 
@@ -89,10 +97,15 @@ class CompressorService {
       socket: socket.id,
       request: JSON.stringify(request)
     })
-    if (!this.romHash || this.romHash === request) {
+    if (!this.romHash) {
       this.romHash = request
+    }
+    if (!this.joined) {
+      logger.info('streamJoinRequested')
       // Locate a raw frame stream supplier
       // channel, room, event, listener
+      this.joined = true
+      this.listenerCounter++
       this.bus.streamJoin('emu', this.romHash, 'frame', this.onRawFrame.bind(this))
       // this.bus.stream(this.romHash, 'frame', {});
     } else {
@@ -110,6 +123,9 @@ class CompressorService {
   }
 
   destroy() {
+    delete this.romHash
+    delete this.joined
+    this.bus.destroy()
   }
 }
 
