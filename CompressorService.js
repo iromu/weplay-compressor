@@ -2,6 +2,7 @@ const uuid = require('node-uuid').v4()
 const logger = require('weplay-common').logger('compressor-service', uuid)
 const EventBus = require('weplay-common').EventBus
 const fps = require('fps')
+const os = require('os')
 
 class CompressorService {
   constructor(discoveryUrl, discoveryPort, statusPort) {
@@ -10,10 +11,9 @@ class CompressorService {
     this.failures = 0
     this.romHash = undefined
     this.listenerCounter = 0
-    this.ticker = fps({every: 60})
+    this.ticker = fps({every: 200})
     this.ticker.on('data', framerate => {
-      logger.info('CompressorService[%s] %s hash[%s] fps %s', uuid,
-        this.listenerCounter, this.romHash, framerate)
+      logger.info('CompressorService[%s] fps %s load %s mem %s free %s', this.romHash, Math.floor(framerate), os.loadavg().join('/'), os.totalmem(), os.freemem())
     })
     this.bus = new EventBus({
       url: discoveryUrl,
