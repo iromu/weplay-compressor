@@ -11,10 +11,7 @@ class CompressorService {
     this.failures = 0
     this.romHash = undefined
     this.listenerCounter = 0
-    this.ticker = fps({every: 200})
-    this.ticker.on('data', framerate => {
-      logger.info('CompressorService[%s] fps %s load %s mem %s free %s', this.romHash, Math.floor(framerate), os.loadavg().join('/'), os.totalmem(), os.freemem())
-    })
+    this.ticker = null
     this.bus = new EventBus({
       url: discoveryUrl,
       port: discoveryPort,
@@ -45,7 +42,8 @@ class CompressorService {
       ],
       serverListeners: {
         'streamJoinRequested': this.streamJoinRequested.bind(this),
-        'streamCreateRequested': this.streamCreateRequested.bind(this)
+        'streamCreateRequested': this.streamCreateRequested.bind(this),
+        'streamLeaveRequested': this.streamLeaveRequested.bind(this)
       }
     }, () => {
       logger.info('CompressorService connected to discovery server', {
@@ -92,6 +90,19 @@ class CompressorService {
     })
   }
 
+  streamLeaveRequested(socket, request) {
+    logger.info('CompressorService.streamLeaveRequested', {
+      socket: socket.id,
+      request: JSON.stringify(request)
+    })
+    socket.leave(request)
+    this.bus.streamLeave('emu', request)
+    this.bus.destroyStream(this.romHash, 'frame')
+    this.joined = false
+    this.romHash = null
+    this.ticker = null
+  }
+
   streamJoinRequested(socket, request) {
     logger.info('CompressorService.streamJoinRequested', {
       socket: socket.id,
@@ -99,30 +110,46 @@ class CompressorService {
     })
     if (!this.romHash) {
       this.romHash = request
-    }
-    if (!this.joined) {
-      logger.info('streamJoinRequested')
-      // Locate a raw frame stream supplier
-      // channel, room, event, listener
-      this.joined = true
-      this.listenerCounter++
-      this.bus.streamJoin('emu', this.romHash, 'frame', this.onRawFrame.bind(this))
-      // this.bus.stream(this.romHash, 'frame', {});
+
+      if (!this.joined) {
+        logger.info('streamJoinRequested')
+        // Locate a raw frame stream supplier
+        // channel, room, event, listener
+        this.joined = true
+        this.listenerCounter++
+        this.bus.streamJoin('emu', request, 'frame', this.onRawFrame.bind(this))
+        // this.bus.stream(this.romHash, 'frame', {});
+      } else {
+        logger.error('EmulatorService.streamJoinRequested. Ignoring request for a new stream.', {
+          socket: socket.id,
+          request: JSON.stringify(request)
+        })
+      }
+      socket.join(request)
     } else {
       logger.error('EmulatorService.streamJoinRequested. Ignoring request for a new stream.', {
         socket: socket.id,
         request: JSON.stringify(request)
       })
     }
-    socket.join(this.romHash)
   }
 
   sendFrame(frame) {
-    this.ticker.tick()
-    this.bus.stream(this.romHash, 'frame', frame)
+    if (this.romHash) {
+      if (!this.ticker) {
+        this.ticker = fps({every: 200})
+        this.ticker.on('data', framerate => {
+          logger.info('CompressorService[%s] fps %s conn %s', this.romHash ? this.romHash : 'ERROR', Math.floor(framerate), this.listenerCounter)
+        })
+      }
+      this.ticker.tick()
+      this.bus.stream(this.romHash, 'frame', frame)
+    }
   }
 
   destroy() {
+    this.ticker = null
+    this.bus.destroyStream(this.romHash, 'frame')
     delete this.romHash
     delete this.joined
     this.bus.destroy()
