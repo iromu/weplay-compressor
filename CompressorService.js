@@ -138,6 +138,8 @@ class CompressorService {
     if (this.romHash) {
       if (!this.ticker) {
         this.ticker = fps({every: 200})
+        logger.info('CompressorService[%s] Init ticker ', this.romHash)
+
         this.ticker.on('data', framerate => {
           logger.info('CompressorService[%s] fps %s conn %s', this.romHash ? this.romHash : 'ERROR', Math.floor(framerate), this.listenerCounter)
         })

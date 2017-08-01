@@ -3,13 +3,13 @@
   "version": "0.0.1",
   "description": "",
   "dependencies": {
-    "fps": "0.0.3",
-    "node-pngquant-native": "1.0.4",
-    "node-uuid": "^1.4.7",
     "babel-cli": "6.18.0",
     "babel-preset-es2015": "6.18.0",
+    "fps": "0.0.3",
+    "node-pngquant-native": "^1.0.5",
+    "node-uuid": "^1.4.7",
     "socket.io-emitter": "^1.0.0",
-    "weplay-common": "iromu/weplay-common#develop"
+    "weplay-common": "github:iromu/weplay-common#develop"
   },
   "devDependencies": {
     "jshint": "latest"
@@ -19,6 +19,6 @@
     "lint": "./node_modules/weplay-common/node_modules/.bin/eslint report ."
   },
   "engines": {
-    "node": ">=6.0.0"
+    "node": ">=8.0.0"
   }
 }
