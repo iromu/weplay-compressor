@@ -10,14 +10,27 @@ memwatch.on('leak', (info) => {
   logger.error('leak', info)
 })
 
+const CHECK_INTERVAL = 2000
+
 class CompressorService {
   constructor(discoveryUrl, discoveryPort, statusPort) {
     this.uuid = require('node-uuid').v4()
     this.pngquant = undefined
     this.failures = 0
-    this.romHash = undefined
+    this.romHash = null
+    this.roomsTimestamp = {}
     this.listenerCounter = 0
     this.ticker = null
+
+    if (this.checkInterval) {
+      clearInterval(this.checkInterval)
+      this.checkInterval = undefined
+    }
+
+    this.checkInterval = setInterval(() => {
+      this.gc()
+    }, CHECK_INTERVAL)
+
     this.bus = new EventBus({
       url: discoveryUrl,
       port: discoveryPort,
@@ -30,11 +43,11 @@ class CompressorService {
           event: 'connect',
           handler: () => {
             logger.info('connected to emu')
-            if (this.romHash && !this.joined) {
-              this.joined = true
-              this.listenerCounter++
-              this.bus.streamJoin('emu', this.romHash, 'frame', this.onRawFrame.bind(this))
-            }
+            // if (this.romHash && !this.joined) {
+            //   this.joined = true
+            //   this.listenerCounter++
+            //   this.bus.streamJoin('emu', this.romHash, 'frame', this.onRawFrame.bind(this))
+            // }
           }
         },
         {
@@ -58,6 +71,31 @@ class CompressorService {
       })
       this.onConnect()
     })
+  }
+
+  gc() {
+    if (this.romHash) {
+      logger.info('CompressorService.check roomsTimestamp', this.romHash, this.roomsTimestamp)
+    }
+    for (var room in this.roomsTimestamp) {
+      if (this.isOlderThan(this.roomsTimestamp[room], CHECK_INTERVAL)) {
+        this.bus.streamLeave('emu', room)
+        this.bus.destroyStream(room, 'frame' + room)
+        this.joined = false
+        this.romHash = null
+        this.ticker = null
+      }
+    }
+    if (!this.roomsTimestamp[this.romHash]) {
+      this.joined = true
+      this.listenerCounter++
+      this.bus.streamJoin('emu', this.romHash, 'frame' + this.romHash, this.onRawFrame.bind(this))
+    }
+    this.roomsTimestamp = {}
+  }
+
+  isOlderThan(ts, limit) {
+    return Date.now() - ts > limit
   }
 
   onConnect() {
@@ -97,6 +135,7 @@ class CompressorService {
   }
 
   streamLeaveRequested(socket, request) {
+    delete this.roomsTimestamp[request]
     if (this.romHash === request) {
       logger.info('CompressorService.streamLeaveRequested', {
         socket: socket.id,
@@ -104,7 +143,7 @@ class CompressorService {
       })
       socket.leave(request)
       this.bus.streamLeave('emu', request)
-      this.bus.destroyStream(this.romHash, 'frame')
+      this.bus.destroyStream(this.romHash, 'frame' + this.romHash)
       this.joined = false
       this.romHash = null
       this.ticker = null
@@ -114,9 +153,12 @@ class CompressorService {
   streamJoinRequested(socket, request) {
     logger.info('CompressorService.streamJoinRequested', {
       socket: socket.id,
-      request: JSON.stringify(request)
+      request: JSON.stringify(request),
+      current: this.romHash
     })
-    this.checkRuntimeStatus(request, socket)
+    if (request) {
+      this.checkRuntimeStatus(request, socket)
+    }
   }
 
   checkRuntimeStatus(request, socket) {
@@ -129,7 +171,7 @@ class CompressorService {
         // channel, room, event, listener
         this.joined = true
         this.listenerCounter++
-        this.bus.streamJoin('emu', request, 'frame', this.onRawFrame.bind(this))
+        this.bus.streamJoin('emu', this.romHash, 'frame' + this.romHash, this.onRawFrame.bind(this))
         // this.bus.stream(this.romHash, 'frame', {});
       } else {
         logger.error('CompressorService.streamJoinRequested. Ignoring request for same stream.', {
@@ -137,7 +179,6 @@ class CompressorService {
           request: JSON.stringify(request)
         })
       }
-      socket.leave(request)
       socket.join(request)
     } else if (this.romHash !== request) {
       logger.error('CompressorService.streamJoinRequested. streamRejected Ignoring request for a new stream.', {
@@ -146,7 +187,6 @@ class CompressorService {
       })
       socket.emit('streamRejected', request)
     } else {
-      socket.leave(request)
       socket.join(request)
     }
   }
@@ -171,17 +211,21 @@ class CompressorService {
       this.ticker.tick()
     }
     if (this.romHash) {
-      this.bus.stream(this.romHash, 'frame', frame)
+      this.roomsTimestamp[this.romHash] = Date.now()
+      this.bus.stream(this.romHash, 'frame' + this.romHash, frame)
     }
   }
 
   destroy() {
     this.ticker && this.ticker.removeAllListeners('data')
     this.ticker = null
-    this.bus.destroyStream(this.romHash, 'frame')
-    delete this.romHash
+    this.bus.destroyStream(this.romHash, 'frame' + this.romHash)
+    this.romHash = null
     delete this.joined
     this.bus.destroy()
+    clearInterval(this.checkInterval)
+    this.checkInterval = undefined
+    this.roomsTimestamp = {}
   }
 }
 
