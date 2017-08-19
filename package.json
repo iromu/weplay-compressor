@@ -8,21 +8,27 @@
     "fps": "0.0.3",
     "memwatch-next": "^0.3.0",
     "node-pngquant-native": "^1.0.5",
-    "node-uuid": "^1.4.7",
+    "uuid": "^3.1.0",
     "socket.io-emitter": "^3.1.0",
     "weplay-common": "github:iromu/weplay-common#develop"
   },
   "devDependencies": {
-    "chai": "4.1.0",
+    "chai": "4.1.1",
+    "es6-plato": "^1.0.14",
+    "eslint": "^4.3.0",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-node": "^5.1.1",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^3.0.1",
     "istanbul": "0.4.5",
     "mocha": "3.5.0",
-    "sinon": "2.4.1",
-    "sinon-chai": "2.12.0",
-    "uuid": "^3.1.0"
+    "sinon": "3.2.1",
+    "sinon-chai": "2.13.0"
   },
   "scripts": {
     "start": "node index.js",
-    "lint": "./node_modules/.bin/eslint report .",
+    "lint": "./node_modules/.bin/eslint report/lint src",
+    "plato": "./node_modules/.bin/es6-plato -r -d report/plato src",
     "test": "NODE_ENV=test ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha",
     "tdd:mac": "NODE_ENV=test ./node_modules/.bin/mocha -w"
   },

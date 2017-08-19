@@ -1,4 +1,4 @@
-FROM node:8
+FROM iromu/weplay-common:latest
 
 # Create app directory
 RUN mkdir -p /usr/src/app/compressor
@@ -7,8 +7,8 @@ WORKDIR /usr/src/app/compressor
 COPY . .
 
 # Install app dependencies
-RUN npm install -g babel-cli
-RUN npm install --production
+RUN yarn --production
+RUN yarn link weplay-common
 
 # Setup environment
 ENV NODE_ENV production

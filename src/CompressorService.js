@@ -1,20 +1,22 @@
-const uuid = require('node-uuid').v4()
+const uuid = require('uuid/v1')()
 const logger = require('weplay-common').logger('compressor-service', uuid)
 const EventBus = require('weplay-common').EventBus
 const fps = require('fps')
+
 const memwatch = require('memwatch-next')
+
 memwatch.on('stats', (stats) => {
-  logger.info('stats', stats)
+  logger.info('CompressorService stats', stats)
 })
 memwatch.on('leak', (info) => {
-  logger.error('leak', info)
+  logger.error('CompressorService leak', info)
 })
 
 const CHECK_INTERVAL = 2000
 
 class CompressorService {
   constructor(discoveryUrl, discoveryPort, statusPort) {
-    this.uuid = require('node-uuid').v4()
+    this.uuid = require('uuid/v1')()
     this.pngquant = undefined
     this.failures = 0
     this.romHash = null
@@ -74,9 +76,9 @@ class CompressorService {
   }
 
   gc() {
-    if (this.romHash) {
-      logger.info('CompressorService.check roomsTimestamp', this.romHash, this.roomsTimestamp)
-    }
+    // if (this.romHash) {
+    //   logger.debug('CompressorService.check roomsTimestamp', this.romHash, this.roomsTimestamp)
+    // }
     for (var room in this.roomsTimestamp) {
       if (this.isOlderThan(this.roomsTimestamp[room], CHECK_INTERVAL)) {
         this.bus.streamLeave('emu', room)
@@ -86,7 +88,7 @@ class CompressorService {
         this.ticker = null
       }
     }
-    if (!this.roomsTimestamp[this.romHash]) {
+    if (!this.roomsTimestamp[this.romHash] && this.romHash) {
       this.joined = true
       this.listenerCounter++
       this.bus.streamJoin('emu', this.romHash, 'frame' + this.romHash, this.onRawFrame.bind(this))
@@ -116,6 +118,7 @@ class CompressorService {
   onRawFrame(frame) {
     if (this.pngquant && this.failures < 3) {
       try {
+        this.pngquant = require('node-pngquant-native')
         const resBuffer = this.pngquant.compress(frame)
         this.sendFrame(resBuffer)
       } catch (e) {
@@ -147,6 +150,7 @@ class CompressorService {
       this.joined = false
       this.romHash = null
       this.ticker = null
+      this.failures = 0
     }
   }
 
@@ -193,7 +197,7 @@ class CompressorService {
 
   checkTicker() {
     if (!this.ticker && this.romHash) {
-      this.ticker = fps({every: 60})
+      this.ticker = fps({every: 200})
       logger.info('CompressorService[%s] Init ticker ', this.romHash)
       const listener = framerate => {
         logger.info('CompressorService[%s] fps %s', this.romHash ? this.romHash : 'ERROR', Math.floor(framerate), {
