@@ -176,6 +176,9 @@ class CompressorService {
         this.joined = true
         this.listenerCounter++
         this.bus.streamJoin('emu', this.romHash, 'frame' + this.romHash, this.onRawFrame.bind(this))
+        this.bus.streamJoin('emu', this.romHash, 'audio' + this.romHash, (audio) => {
+          this.bus.stream(this.romHash, 'audio' + this.romHash, audio)
+        })
         // this.bus.stream(this.romHash, 'frame', {});
       } else {
         logger.error('CompressorService.streamJoinRequested. Ignoring request for same stream.', {
