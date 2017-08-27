@@ -1,7 +1,3 @@
-/* eslint-disable*/
-
-'use strict'
-
 process.env.NODE_ENV = 'test'
 
 global.chai = require('chai')
@@ -17,4 +13,4 @@ global.chai.use(global.sinonChai)
 let latestPort = 55000
 let ports = Array.from({length: 100}, () => latestPort++)
 
-module.exports = ports
+export default ports

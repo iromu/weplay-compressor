@@ -1,9 +1,9 @@
-const uuid = require('uuid/v1')()
-const logger = require('weplay-common').logger('compressor-service', uuid)
-const EventBus = require('weplay-common').EventBus
-const fps = require('fps')
+import {EventBus, LoggerFactory} from 'weplay-common'
+import fps from 'fps'
+import memwatch from 'memwatch-next'
 
-const memwatch = require('memwatch-next')
+const uuid = require('uuid/v1')()
+const logger = LoggerFactory.get('compressor-service', uuid)
 
 memwatch.on('stats', (stats) => {
   logger.info('CompressorService stats', stats)
@@ -36,7 +36,7 @@ class CompressorService {
     this.bus = new EventBus({
       url: discoveryUrl,
       port: discoveryPort,
-      statusPort: statusPort,
+      statusPort,
       name: 'compressor',
       id: this.uuid,
       clientListeners: [
@@ -68,7 +68,7 @@ class CompressorService {
       }
     }, () => {
       logger.info('CompressorService connected to discovery server', {
-        discoveryUrl: discoveryUrl,
+        discoveryUrl,
         uuid: this.uuid
       })
       this.onConnect()
@@ -79,10 +79,10 @@ class CompressorService {
     // if (this.romHash) {
     //   logger.debug('CompressorService.check roomsTimestamp', this.romHash, this.roomsTimestamp)
     // }
-    for (var room in this.roomsTimestamp) {
+    for (const room in this.roomsTimestamp) {
       if (this.isOlderThan(this.roomsTimestamp[room], CHECK_INTERVAL)) {
         this.bus.streamLeave('emu', room)
-        this.bus.destroyStream(room, 'frame' + room)
+        this.bus.destroyStream(room, `frame${room}`)
         this.joined = false
         this.romHash = null
         this.ticker = null
@@ -91,7 +91,7 @@ class CompressorService {
     if (!this.roomsTimestamp[this.romHash] && this.romHash) {
       this.joined = true
       this.listenerCounter++
-      this.bus.streamJoin('emu', this.romHash, 'frame' + this.romHash, this.onRawFrame.bind(this))
+      this.bus.streamJoin('emu', this.romHash, `frame${this.romHash}`, this.onRawFrame.bind(this))
     }
     this.roomsTimestamp = {}
   }
@@ -146,7 +146,7 @@ class CompressorService {
       })
       socket.leave(request)
       this.bus.streamLeave('emu', request)
-      this.bus.destroyStream(this.romHash, 'frame' + this.romHash)
+      this.bus.destroyStream(this.romHash, `frame${this.romHash}`)
       this.joined = false
       this.romHash = null
       this.ticker = null
@@ -175,9 +175,9 @@ class CompressorService {
         // channel, room, event, listener
         this.joined = true
         this.listenerCounter++
-        this.bus.streamJoin('emu', this.romHash, 'frame' + this.romHash, this.onRawFrame.bind(this))
-        this.bus.streamJoin('emu', this.romHash, 'audio' + this.romHash, (audio) => {
-          this.bus.stream(this.romHash, 'audio' + this.romHash, audio)
+        this.bus.streamJoin('emu', this.romHash, `frame${this.romHash}`, this.onRawFrame.bind(this))
+        this.bus.streamJoin('emu', this.romHash, `audio${this.romHash}`, (audio) => {
+          this.bus.stream(this.romHash, `audio${this.romHash}`, audio)
         })
         // this.bus.stream(this.romHash, 'frame', {});
       } else {
@@ -219,14 +219,14 @@ class CompressorService {
     }
     if (this.romHash) {
       this.roomsTimestamp[this.romHash] = Date.now()
-      this.bus.stream(this.romHash, 'frame' + this.romHash, frame)
+      this.bus.stream(this.romHash, `frame${this.romHash}`, frame)
     }
   }
 
   destroy() {
     this.ticker && this.ticker.removeAllListeners('data')
     this.ticker = null
-    this.bus.destroyStream(this.romHash, 'frame' + this.romHash)
+    this.bus.destroyStream(this.romHash, `frame${this.romHash}`)
     this.romHash = null
     delete this.joined
     this.bus.destroy()
@@ -236,4 +236,4 @@ class CompressorService {
   }
 }
 
-module.exports = CompressorService
+export default CompressorService
