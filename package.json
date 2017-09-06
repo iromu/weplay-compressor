@@ -30,8 +30,9 @@
     "start": "node build/index.js",
     "start:dev": "babel-node src/index.js",
     "lint": "eslint src",
-    "plato": "./node_modules/.bin/es6-plato -r -d report/plato src",
-    "test": "NODE_ENV=test ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- --compilers js:babel-register",
+    "plato": "es6-plato -r -d report/plato src",
+    "test": "NODE_ENV=test istanbul cover mocha -- --compilers js:babel-register",
+    "ci-test": "jenkins-mocha --compilers js:babel-register --cobertura test/*.spec.js",
     "tdd:mac": "NODE_ENV=test ./node_modules/.bin/mocha -w",
     "build": "babel src -d build",
     "prepublish": "npm run build"
