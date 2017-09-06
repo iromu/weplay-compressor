@@ -14,6 +14,7 @@ node('node') {
           env.NODE_ENV = "test"
           sh 'node -v'
           sh 'yarn install'
+          sh 'yarn link weplay-common'
         }
 
        stage('Build'){
@@ -28,9 +29,8 @@ node('node') {
 
        }
 
-       stage('Link'){
-         env.NODE_ENV = "test"
-         sh 'yarn link'
+       stage('Archive'){
+         archiveArtifacts 'build/*'
        }
 
        stage('Cleanup'){
