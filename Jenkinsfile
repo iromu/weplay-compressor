@@ -11,7 +11,6 @@ pipeline {
             }
             sh 'node -v'
             sh 'yarn install'
-            sh 'yarn link weplay-common'
           }
         }
 
@@ -31,7 +30,6 @@ pipeline {
 
        stage('Archive'){
          steps {
-            sh 'yarn link'
             sh 'yarn pack'
             archiveArtifacts '*.tgz'
             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: 'report/plato', reportFiles: 'index.html', reportName: 'Plato Report', reportTitles: ''])
