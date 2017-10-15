@@ -4,7 +4,7 @@ pipeline {
     triggers {
       upstream(upstreamProjects: "weplay-common/" + env.BRANCH_NAME.replaceAll("/", "%2F"), threshold: hudson.model.Result.SUCCESS)
     }
-    
+
     stages  {
 
         stage('Initialize') {
@@ -51,6 +51,14 @@ pipeline {
              sh 'docker push iromu/weplay-compressor-arm:latest'
          }
        }
+
+       stage('Docker amd64'){
+         agent { label 'docker'  }
+         steps {
+             sh 'docker build --no-cache -t iromu/weplay-compressor:latest . -f Dockerfile'
+             sh 'docker push iromu/weplay-compressor:latest'
+         }
+        }
 
        stage('Cleanup'){
          agent any
