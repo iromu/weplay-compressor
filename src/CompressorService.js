@@ -110,6 +110,7 @@ class CompressorService {
         logger.debug('pngquant loaded')
         logger.info('CompressorService waiting for incoming users.')
       } catch (e) {
+        logger.error('Error linking node-pngquant-native')
         logger.error(e)
       }
     }
